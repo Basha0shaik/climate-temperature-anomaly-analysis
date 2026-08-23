@@ -1,0 +1,50 @@
+import xarray as xr
+ds = xr.open_dataset("/content/climate_temperature_regional_1980.nc")
+
+print(ds)
+
+print(ds.data_vars)
+print(ds.coords)
+
+import pandas as pd
+
+df = pd.DataFrame({
+    "Year": ds["year"].values,
+    "Month": ds["month"].values,
+    "Temperature": ds["temperature"].values
+})
+
+print(df.head())
+print(df.tail())
+
+baseline = df[
+    (df["Year"] >= 1981) &
+    (df["Year"] <= 2010)
+]["Temperature"].mean()
+
+print("Baseline mean:", baseline)
+
+df["Temperature_Anomaly"] = df["Temperature"] - baseline
+
+print(df.head())
+
+df["Decade"] = (df["Year"] // 10) * 10
+
+decade_avg = df.groupby("Decade")["Temperature_Anomaly"].mean()
+
+print(decade_avg)
+
+decade_avg.to_csv("decade_temperature_anomalies.csv")
+
+import matplotlib.pyplot as plt
+
+plt.figure(figsize=(8,5))
+
+plt.plot(decade_avg.index, decade_avg.values, marker="o")
+
+plt.xlabel("Decade")
+plt.ylabel("Average Temperature Anomaly")
+plt.title("Average Temperature Anomalies by Decade (1980–2020)")
+
+plt.xticks(decade_avg.index)
+plt.show()
